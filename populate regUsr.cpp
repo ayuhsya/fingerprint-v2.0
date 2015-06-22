@@ -122,7 +122,7 @@ int main(int argc, char* argv[]){
 	int   msg_qid;
 	struct msgbuf qbuf;
 	SGDeviceInfoParam deviceInfo;
-	int status = 0;
+	int status;
 	std::string sqlQuery;
 
 	// Instantiate SGFPLib object
@@ -183,7 +183,7 @@ int main(int argc, char* argv[]){
 					    fingerInfo.ImpressionType = SG_IMPTYPE_LP;
 					    fingerInfo.ImageQuality = quality; //0 to 100
 					    err = sgfplib->CreateTemplate(&fingerInfo, imageBuffer1, minutiaeBuffer1);
-
+/*
 					    sqlQuery = "select * from regUsr";
 
 					    if(sqlite3_open("sqldb.db",&db) == SQLITE_OK){
@@ -192,48 +192,38 @@ int main(int argc, char* argv[]){
 						        int res = 0;
 
 						        do{
-						        	printf("in dowhile\n");
 						            res = sqlite3_step(stmt);
 
 						            if ( res == SQLITE_ROW ){
 						                    if(sqlite3_column_blob(stmt, 1) != NULL){
-						                    	printf("found fingerprint to match\n");
-						                    	minutiaeBuffer2 = (BYTE*)sqlite3_column_blob(stmt,1);
-									printf("%s\n",minutiaeBuffer2);
-}
+						                    	minutiaeBuffer2 = (BYTE *)sqlite3_column_blob(stmt,1);
+						                    }
 
 											DWORD sl = SL_NORMAL;			// Set security level as NORMAL
 											BOOL matched;
-
 											err = sgfplib->MatchTemplate(minutiaeBuffer1, minutiaeBuffer2, sl, &matched);
 
-											if(matched)
-											{
-												status = 1;
-												break;
-											}
+											if(matched) status = 1;
 											else status = 0;
-						            		printf("match : %d\n", status);
 						            }
-						            printf("res = [%ld]\n",res);
-						        }while( res != SQLITE_DONE && res!=SQLITE_ERROR);
+						            printf("\n");
+						        }while( res == SQLITE_DONE || res==SQLITE_ERROR);
 						    }
 						}
 					
+*/
 					    if (err == SGFDX_ERROR_NONE){
 							// getTemplateSize()
-							printf("inserting into users table");
 							err = sgfplib->GetTemplateSize(minutiaeBuffer1, &templateSize);
 
-							sqlQuery = "insert into users values (?,?,?);";
+							sqlQuery = "insert into regUsr values (?,?,?);";
 
 							if(sqlite3_open("sqldb.db",&db) == SQLITE_OK){
 								sqlite3_prepare_v2(db,sqlQuery.c_str(),-1,&stmt, NULL);
 								sqlite3_bind_int(stmt,1,atoi(argv[1]));
-								
-								sqlite3_bind_int(stmt,2,status);
-								sqlite3_bind_blob(stmt,3,minutiaeBuffer1,sizeof(minutiaeBuffer1)+1,SQLITE_TRANSIENT);
-								//sqlite3_bind_text(stmt,3,argv[2],-1,SQLITE_TRANSIENT);
+								//sqlite3_bind_int(stmt,2,status);
+								sqlite3_bind_blob(stmt,2,minutiaeBuffer1,sizeof(minutiaeBuffer1)+1,SQLITE_TRANSIENT);
+								sqlite3_bind_text(stmt,3,argv[2],-1,SQLITE_TRANSIENT);
 
 
 								if(sqlite3_step(stmt)!=SQLITE_DONE)
