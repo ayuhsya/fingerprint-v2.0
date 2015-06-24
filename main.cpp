@@ -113,7 +113,7 @@ int main(int argc, char* argv[]){
 	long err;
 	int fingerLength = 0;
 	BYTE* imageBuffer1;
-	BYTE *minutiaeBuffer1, *minutiaeBuffer2; 
+	BYTE *minutiaeBuffer1, *minutiaeBuffer2;
 	DWORD quality;
 	DWORD templateSize, templateSizeMax;
 	SGFingerInfo fingerInfo;
@@ -184,7 +184,7 @@ int main(int argc, char* argv[]){
 					    fingerInfo.ImageQuality = quality; //0 to 100
 					    err = sgfplib->CreateTemplate(&fingerInfo, imageBuffer1, minutiaeBuffer1);
 
-					    sqlQuery = "select * from regUsr";
+					    sqlQuery = "select * from regUser";
 
 					    if(sqlite3_open("sqldb.db",&db) == SQLITE_OK){
 						    if ( sqlite3_prepare_v2(db, sqlQuery.c_str(), -1, &stmt, NULL ) == SQLITE_OK ){
@@ -192,14 +192,14 @@ int main(int argc, char* argv[]){
 						        int res = 0;
 
 						        do{
-						        	printf("in dowhile\n");
+						        	printf("in dowhile\n\n");
 						            res = sqlite3_step(stmt);
 
 						            if ( res == SQLITE_ROW ){
 						                    if(sqlite3_column_blob(stmt, 1) != NULL){
 						                    	printf("found fingerprint to match\n");
 						                    	minutiaeBuffer2 = (BYTE*)sqlite3_column_blob(stmt,1);
-									printf("%s\n",minutiaeBuffer2);
+									printf("%s\n\n",minutiaeBuffer2);
 }
 
 											DWORD sl = SL_NORMAL;			// Set security level as NORMAL
@@ -210,40 +210,42 @@ int main(int argc, char* argv[]){
 											if(matched)
 											{
 												status = 1;
+												printf("\n%d\n",status);
 												break;
 											}
-											else status = 0;
-						            		printf("match : %d\n", status);
 						            }
 						            printf("res = [%ld]\n",res);
-						        }while( res != SQLITE_DONE && res!=SQLITE_ERROR);
+						        }while( res!=SQLITE_DONE && res!=SQLITE_ERROR);
 						    }
 						}
-					
+
 					    if (err == SGFDX_ERROR_NONE){
 							// getTemplateSize()
-							printf("inserting into users table");
+							printf("inserting into newUser table\n");
 							err = sgfplib->GetTemplateSize(minutiaeBuffer1, &templateSize);
 
-							sqlQuery = "insert into users values (?,?,?);";
+							sqlQuery = "insert into newUser values (?,?,?);";
+							sleep(10);
 
-							if(sqlite3_open("sqldb.db",&db) == SQLITE_OK){
-								sqlite3_prepare_v2(db,sqlQuery.c_str(),-1,&stmt, NULL);
-								sqlite3_bind_int(stmt,1,atoi(argv[1]));
-								
-								sqlite3_bind_int(stmt,2,status);
-								sqlite3_bind_blob(stmt,3,minutiaeBuffer1,sizeof(minutiaeBuffer1)+1,SQLITE_TRANSIENT);
-								//sqlite3_bind_text(stmt,3,argv[2],-1,SQLITE_TRANSIENT);
+							//if(sqlite3_open("sqldb.db",&db) == SQLITE_OK){
+				if(sqlite3_prepare_v2(db,sqlQuery.c_str(),-1,&stmt, NULL) != SQLITE_OK) printf("Error in preparing");
+				if(sqlite3_bind_int(stmt,1,atoi(argv[1])) != SQLITE_OK) printf("Error binding timestamp");
+				if(sqlite3_bind_int(stmt,2,status) != SQLITE_OK) printf("Error binding status");
+				if(sqlite3_bind_blob(stmt,3,minutiaeBuffer1,4096,SQLITE_TRANSIENT) != SQLITE_OK) printf("Error binding BLOB");
+								printf("checkpoint\n");
 
-
-								if(sqlite3_step(stmt)!=SQLITE_DONE)
-									printf("Errata");
+								if(sqlite3_step(stmt)!=SQLITE_DONE){
+									int res;
+									res = sqlite3_step(stmt);
+									printf("[%ld]",res);
+									printf("Error in data insertion!");
+								}
 								else
-									printf("data insertion successful %d",sizeof(minutiaeBuffer1));
-							}
-							else{
-								printf("failed to open db, create db? y/n");
-							}
+									printf("data insertion successful");
+						//	}
+						//	else{
+						//		printf("failed to open db, create db? y/n");
+						//	}
 							sqlite3_finalize(stmt);
 							sqlite3_close(db);
 						}
